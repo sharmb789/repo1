@@ -1,83 +1,125 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1
 
-ARG GO_VERSION=1.19
-ARG XX_VERSION=1.1.2
-ARG DOCKERD_VERSION=20.10.14
+# This Dockerfile builds the docs for https://docs.docker.com/
+# from the master branch of https://github.com/docker/docker.github.io
 
-FROM docker:$DOCKERD_VERSION AS dockerd-release
+# Use same ruby version as the one in .ruby-version
+# that is used by Netlify
+ARG RUBY_VERSION=2.7.6
+# Same as the one in Gemfile.lock
+ARG BUNDLER_VERSION=2.3.13
 
-# xx is a helper for cross-compilation
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+ARG JEKYLL_ENV=development
+ARG DOCS_URL=http://localhost:4000
 
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
-
-FROM golatest AS gobase
-COPY --from=xx / /
-RUN apk add --no-cache file git
-ENV GOFLAGS=-mod=vendor
-ENV CGO_ENABLED=0
+# Base stage for building
+FROM ruby:${RUBY_VERSION}-alpine AS base
 WORKDIR /src
+RUN apk add --no-cache bash build-base git
 
-FROM gobase AS buildx-version
-RUN --mount=target=. \
-  PKG=github.com/docker/buildx VERSION=$(git describe --match 'v[0-9]*' --dirty='.m' --always --tags) REVISION=$(git rev-parse HEAD)$(if ! git diff --no-ext-diff --quiet --exit-code; then echo .m; fi); \
-  echo "-X ${PKG}/version.Version=${VERSION} -X ${PKG}/version.Revision=${REVISION} -X ${PKG}/version.Package=${PKG}" | tee /tmp/.ldflags; \
-  echo -n "${VERSION}" | tee /tmp/.version;
+# Gem stage will install bundler used as dependency manager
+# for our dependencies in Gemfile for Jekyll
+FROM base AS gem
+ARG BUNDLER_VERSION
+COPY Gemfile* .
+RUN gem uninstall -aIx bundler \
+  && gem install bundler -v ${BUNDLER_VERSION} \
+  && bundle install --jobs 4 --retry 3
 
-FROM gobase AS buildx-build
-ARG LDFLAGS="-w -s"
-ARG TARGETPLATFORM
-RUN --mount=type=bind,target=. \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  --mount=type=bind,source=/tmp/.ldflags,target=/tmp/.ldflags,from=buildx-version \
-  set -x; xx-go build -ldflags "$(cat /tmp/.ldflags) ${LDFLAGS}" -o /usr/bin/buildx ./cmd/buildx && \
-  xx-verify --static /usr/bin/buildx
+# Vendor Gemfile for Jekyll
+FROM gem AS vendored
+ARG BUNDLER_VERSION
+RUN bundle update \
+  && mkdir /out \
+  && cp Gemfile.lock /out
 
-FROM gobase AS test
-RUN --mount=type=bind,target=. \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  go test -v -coverprofile=/tmp/coverage.txt -covermode=atomic ./... && \
-  go tool cover -func=/tmp/coverage.txt
+# Stage used to output the vendored Gemfile.lock:
+# > make vendor
+# or
+# > docker buildx bake vendor
+FROM scratch AS vendor
+COPY --from=vendored /out /
 
-FROM scratch AS test-coverage
-COPY --from=test /tmp/coverage.txt /coverage.txt
+# Build the static HTML for the current docs.
+# After building with jekyll, fix up some links
+FROM gem AS generate
+ARG JEKYLL_ENV
+ARG DOCS_URL
+ENV TARGET=/out
+RUN --mount=type=bind,target=.,rw \
+    --mount=type=cache,target=/src/.jekyll-cache <<EOT
+  set -eu
+  CONFIG_FILES=_config.yml$([ "$JEKYLL_ENV" = "production" ] && echo ",_config_production.yml" || true)
+  set -x
+  bundle exec jekyll build --profile -d ${TARGET} --config ${CONFIG_FILES}
+EOT
 
-FROM scratch AS binaries-unix
-COPY --link --from=buildx-build /usr/bin/buildx /
+# htmlproofer checks for broken links
+FROM gem AS htmlproofer-base
+RUN --mount=type=bind,from=generate,source=/out,target=_site <<EOF
+  htmlproofer ./_site \
+    --disable-external \
+    --internal-domains="docs.docker.com,docs-stage.docker.com,localhost:4000" \
+    --file-ignore="/^./_site/engine/api/.*$/,./_site/registry/configuration/index.html" \
+    --url-ignore="/^/docker-hub/api/latest/.*$/,/^/engine/api/v.+/#.*$/,/^/glossary/.*$/" > /results 2>&1
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
+    echo -n > /results
+  fi
+EOF
 
-FROM binaries-unix AS binaries-darwin
-FROM binaries-unix AS binaries-linux
+FROM htmlproofer-base as htmlproofer
+RUN <<EOF
+  cat /results
+  [ ! -s /results ] || exit 1
+EOF
 
-FROM scratch AS binaries-windows
-COPY --link --from=buildx-build /usr/bin/buildx /buildx.exe
+FROM scratch as htmlproofer-output
+COPY --from=htmlproofer-base /results /results
 
-FROM binaries-$TARGETOS AS binaries
+# mdl is a lint tool for markdown files
+FROM gem AS mdl-base
+ARG MDL_JSON
+ARG MDL_STYLE
+RUN --mount=type=bind,target=. <<EOF
+  mdl --ignore-front-matter ${MDL_JSON:+'--json'} --style=${MDL_STYLE:-'.markdownlint.rb'} $( \
+    find '.' -name '*.md' \
+      -not -path './registry/*' \
+      -not -path './desktop/extensions-sdk/*' \
+  ) > /results
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
+    echo -n > /results
+  fi
+EOF
 
-# Release
-FROM --platform=$BUILDPLATFORM alpine AS releaser
-WORKDIR /work
-ARG TARGETPLATFORM
-RUN --mount=from=binaries \
-  --mount=type=bind,source=/tmp/.version,target=/tmp/.version,from=buildx-version \
-  mkdir -p /out && cp buildx* "/out/buildx-$(cat /tmp/.version).$(echo $TARGETPLATFORM | sed 's/\//-/g')$(ls buildx* | sed -e 's/^buildx//')"
+FROM mdl-base as mdl
+RUN <<EOF
+  cat /results
+  [ ! -s /results ] || exit 1
+EOF
 
+FROM scratch as mdl-output
+COPY --from=mdl-base /results /results
+
+# Release the generated files in a scratch image
+# Can be output to your host with:
+# > make release
+# or
+# > docker buildx bake release
 FROM scratch AS release
-COPY --from=releaser /out/ /
+COPY --from=generate /out /
 
-# Shell
-FROM docker:$DOCKERD_VERSION AS dockerd-release
-FROM alpine AS shell
-RUN apk add --no-cache iptables tmux git vim less openssh
-RUN mkdir -p /usr/local/lib/docker/cli-plugins && ln -s /usr/local/bin/buildx /usr/local/lib/docker/cli-plugins/docker-buildx
-COPY ./hack/demo-env/entrypoint.sh /usr/local/bin
-COPY ./hack/demo-env/tmux.conf /root/.tmux.conf
-COPY --from=dockerd-release /usr/local/bin /usr/local/bin
-WORKDIR /work
-COPY ./hack/demo-env/examples .
-COPY --from=binaries / /usr/local/bin/
-VOLUME /var/lib/docker
-ENTRYPOINT ["entrypoint.sh"]
+# Create a runnable nginx instance with generated HTML files.
+# When the image is run, it starts Nginx and serves the docs at port 4000:
+# > make deploy
+# or
+# > docker-compose up --build
+FROM nginx:alpine AS deploy
+COPY --from=release / /usr/share/nginx/html
+COPY _deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
+ARG JEKYLL_ENV
+ENV JEKYLL_ENV=${JEKYLL_ENV}
+CMD echo -e "Docker docs are viewable at:\nhttp://0.0.0.0:4000 (build target: ${JEKYLL_ENV})"; exec nginx -g 'daemon off;'
 
-FROM binaries
+FROM deploy
