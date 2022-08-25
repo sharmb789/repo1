@@ -24,6 +24,7 @@ jobs:
         with:
           username: ${{ secrets.JDESH6000 }}
           password: ${{ secrets.dckr_pat_pybbZGk8YMZfGo-pqSlLxQ58LnM }}
+          logout: true
       -
         name: Build and push
         uses: docker/build-push-action@v3
