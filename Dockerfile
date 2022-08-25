@@ -1,23 +1,7 @@
-#
-# Ubuntu Desktop (LXDE) Dockerfile
-#
-# https://github.com/dockerfile/ubuntu-desktop
-#
+FROM redhat/ubi8:8.6-754
 
-# Pull base image.
-FROM ubuntu
-
-# Install LXDE and VNC server.
-RUN \
-  apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y lxde-core lxterminal tightvncserver && \
-  rm -rf /var/lib/apt/lists/*
-
-# Define working directory.
-WORKDIR /data
-
-# Define default command.
-CMD ["bash"]
-
-# Expose ports.
-EXPOSE 5901
+RUN subscription-manager register --username=jagadesh.sundarraj@pfizer.com --password=Honey@600 \
+&& subscription-manager attach --auto \
+&& subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms \
+&& dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+&& dnf clean all 
