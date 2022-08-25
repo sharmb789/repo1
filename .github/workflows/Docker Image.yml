@@ -84,4 +84,4 @@ jobs:
 
           push: true
 
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gitact:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest
