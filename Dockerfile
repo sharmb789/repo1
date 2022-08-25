@@ -1,7 +1,22 @@
-FROM redhat/ubi8:latest
+FROM ubuntu:latest
 
-RUN subscription-manager register --username=jagadesh.sundarraj@pfizer.com --password=Honey@600 \
-&& subscription-manager attach --auto \
-&& subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms \
-&& dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
-&& dnf clean all 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+# wget for downloading files (especially in tests, which run in this environment)
+		ca-certificates \
+		wget \
+# git for cloning source code
+		git \
+# gawk for diff-pr.sh
+		gawk \
+# tar -tf in diff-pr.sh
+		bzip2 \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
+ENV DIR /usr/src/official-images
+ENV BASHBREW_LIBRARY $DIR/library
+
+WORKDIR $DIR
+COPY . $DIR
