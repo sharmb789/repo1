@@ -1,4 +1,4 @@
-FROM redhat/ubi8:8.6-754
+FROM redhat/ubi8:latest
 
 RUN subscription-manager register --username=jagadesh.sundarraj@pfizer.com --password=Honey@600 \
 && subscription-manager attach --auto \
