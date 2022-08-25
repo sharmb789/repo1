@@ -1,32 +1,23 @@
 #
-# Ubuntu Dockerfile
+# Ubuntu Desktop (LXDE) Dockerfile
 #
-# https://github.com/dockerfile/ubuntu
+# https://github.com/dockerfile/ubuntu-desktop
 #
 
 # Pull base image.
-FROM ubuntu:latest
+FROM dockerfile/ubuntu
 
-# Install.
+# Install LXDE and VNC server.
 RUN \
-  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
   apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y build-essential && \
-  apt-get install -y software-properties-common && \
-  apt-get install -y byobu curl git htop man unzip vim wget && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y lxde-core lxterminal tightvncserver && \
   rm -rf /var/lib/apt/lists/*
 
-# Add files.
-ADD root/.bashrc /root/.bashrc
-ADD root/.gitconfig /root/.gitconfig
-ADD root/.scripts /root/.scripts
-
-# Set environment variables.
-ENV HOME /root
-
 # Define working directory.
-WORKDIR /root
+WORKDIR /data
 
 # Define default command.
 CMD ["bash"]
+
+# Expose ports.
+EXPOSE 5901
