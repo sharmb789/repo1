@@ -5,7 +5,6 @@ RUN subscription-manager register --username=jdesh600 --password=Honey@600 \
 && dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
 && dnf clean all
 
-FROM base as rdep
 RUN echo "Installing Redhat UBI system dependecies" \
 && dnf install -y binutils-2.30-113.el8.x86_64 \
   bzip2-devel-1.0.6-26.el8.x86_64 \
@@ -73,7 +72,6 @@ RUN echo "Installing Redhat UBI system dependecies" \
   zlib-devel-1.2.11-18.el8_5.x86_64 \
 && dnf clean all
 
-FROM rdep as rbase
 ARG R_VERSION=4.1.1
 RUN echo "Installing R-4.1.1 Base..." && \
     curl -O https://cdn.rstudio.com/r/centos-8/pkgs/R-${R_VERSION}-1-1.x86_64.rpm && \
