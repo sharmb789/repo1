@@ -43,4 +43,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: jdesh600.jfrog.io/jdesh600/myimage:latest
+          tags: jdesh600.jfrog.io/myimage:latest
