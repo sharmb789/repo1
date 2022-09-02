@@ -1,4 +1,4 @@
-FROM ubi8
+FROM rbase:ubi8
 
 ARG RPACKAGE_REPO=https://packagemanager.rstudio.com/
 
