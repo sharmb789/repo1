@@ -7,6 +7,7 @@ ARG R_VERSION=4.1.1
 ENV DISPLAY=10
 
 ENV NOAWT=1
+mkdir /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
 
 RUN echo 'options(repos = c(RSPM = "https://packagemanager.rstudio.com/cran/latest"))' >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
 RUN dos2unix /opt/R/${R_VERSION}/lib/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Renviron /opt/R/${R_VERSION}/lib/R/etc/Renviron
