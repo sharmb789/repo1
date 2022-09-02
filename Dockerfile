@@ -7,9 +7,8 @@ ARG R_VERSION=4.1.1
 ENV DISPLAY=10
 
 ENV NOAWT=1
-mkdir /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
 
-RUN echo 'options(repos = c(RSPM = "https://packagemanager.rstudio.com/cran/latest"))' >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
+RUN echo 'options(repos = c(RSPM = "https://packagemanager.rstudio.com/"))' >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
 RUN dos2unix /opt/R/${R_VERSION}/lib/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Renviron /opt/R/${R_VERSION}/lib/R/etc/Renviron
 RUN R CMD javareconf \
        && mkdir /root/.R && echo -e "CXX14=g++ -std=c++1y -O3 -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined -fPIC\nCXX14FLAGS=-O3 -march=core-avx-i -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined\nCFLAGS=-O3 -march=core-avx-i -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined" >> /root/.R/Makevars
