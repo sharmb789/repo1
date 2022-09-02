@@ -25,7 +25,6 @@ RUN Rscript -e "install.packages(scan('file:///sources/Packages.csv', what='char
 RUN Rscript -e "install.packages('Rmpi', configure.args=c('--with-Rmpi-libpath=/usr/lib64/openmpi/lib','--with-Rmpi-type=OPENMPI','--with-Rmpi-include=/usr/include/openmpi-x86_64'),repos = '${RPACKAGE_REPO}')"
 RUN Rscript -e "install.packages('doMPI',repos = '${RPACKAGE_REPO}')"
 
-
 # Remove Compiler C FLAGS to install Rgraphviz,,gRbase,gRain
 RUN mv /root/.R/Makevars /root/.R/Makevars_bkp \
 && Rscript -e "install.packages('Rgraphviz', repos = '${RPACKAGE_REPO}' , dependencies = TRUE)" \
