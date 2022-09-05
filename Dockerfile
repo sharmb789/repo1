@@ -90,13 +90,6 @@ RUN echo "Installing system level dependecies for R packages" \
 && cd / && rm -rf /source \
 && dnf clean all 
 
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.332.b09-2.el8_6.x86_64/jre/
-ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.332.b09-2.el8_6.x86_64/jre/lib/amd64:/usr/lib/openmpi
-ENV OCI_LIB=/usr/lib/oracle/21/client64/lib
-ENV OCI_INC=/usr/include/oracle/21/client64
-ENV SNAKECHARMR_PYTHON_VERSION=3
-ENV R_JAVA_LD_LIBRARY_PATH=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.332.b09-2.el8_6.x86_64/jre/lib/amd64
-
 ARG R_VERSION=4.1.1
 RUN echo "Installing R-4.1.1 Base..." && \
     curl -O https://cdn.rstudio.com/r/centos-8/pkgs/R-${R_VERSION}-1-1.x86_64.rpm && \
