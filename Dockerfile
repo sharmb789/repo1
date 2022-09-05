@@ -1,4 +1,4 @@
-FROM redhat/ubi8
+FROM redhat/ubi8 as base
 RUN subscription-manager register --username=jdesh600 --password=Honey@600 \
 && subscription-manager attach --auto \
 && subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms \
@@ -72,24 +72,6 @@ RUN echo "Installing Redhat UBI system dependecies" \
   zlib-devel-1.2.11-18.el8_5.x86_64 \
 && dnf clean all
 
-RUN echo "Installing system level dependecies for R packages" \
-&& dnf install -y jasper-libs-2.0.14-5.el8.x86_64 \
-   java-1.8.0-openjdk-1.8.0.332.b09-2.el8_6.x86_64 \
-   java-1.8.0-openjdk-devel-1.8.0.332.b09-2.el8_6.x86_64 \
-   java-1.8.0-openjdk-headless-1.8.0.332.b09-2.el8_6.x86_64 \
-   javapackages-filesystem-5.3.0-1.module+el8+2447+6f56d9a6.noarch \
-   jbig2dec-libs-0.16-1.el8.x86_64 \
-&& mkdir /source && cd /source \
-&& curl -O https://cfhcable.dl.sourceforge.net/project/mcmc-jags/JAGS/4.x/Source/JAGS-4.3.1.tar.gz \
-&& curl -O https://download.oracle.com/otn_software/linux/instantclient/216000/oracle-instantclient-basic-21.6.0.0.0-1.el8.x86_64.rpm \
-&& curl -O https://download.oracle.com/otn_software/linux/instantclient/216000/oracle-instantclient-devel-21.6.0.0.0-1.el8.x86_64.rpm \
-&& curl -O https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/Packages/g/ggobi-2.1.7-3.el6.x86_64.rpm \
-&& curl -O https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/Packages/g/ggobi-devel-2.1.7-3.el6.x86_64.rpm \
-&& dnf install -y oracle-instantclient-basic-21.6.0.0.0-1.el8.x86_64.rpm oracle-instantclient-devel-21.6.0.0.0-1.el8.x86_64.rpm ggobi-2.1.7-3.el6.x86_64.rpm ggobi-devel-2.1.7-3.el6.x86_64.rpm \
-&& tar -xf JAGS-4.3.1.tar.gz && cd JAGS-4.3.1 && ./configure && make && make install \
-&& cd / && rm -rf /source \
-&& dnf clean all 
-
 ARG R_VERSION=4.1.1
 RUN echo "Installing R-4.1.1 Base..." && \
     curl -O https://cdn.rstudio.com/r/centos-8/pkgs/R-${R_VERSION}-1-1.x86_64.rpm && \
@@ -104,44 +86,3 @@ COPY Makevars /opt/R/${R_VERSION}/lib64/R/etc/Makevars
 
 COPY Renviron /opt/R/${R_VERSION}/lib/R/etc/Renviron
 COPY Renviron /opt/R/${R_VERSION}/lib64/R/etc/Renviron
-
-ARG RPACKAGE_REPO=https://packagemanager.rstudio.com/all/latest
-
-ARG R_VERSION=4.1.1
-
-ENV DISPLAY=10
-
-ENV NOAWT=1
-
-RUN echo 'options(repos = c(RSPM = "https://packagemanager.rstudio.com/"))' >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
-RUN dos2unix /opt/R/${R_VERSION}/lib/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Makevars /opt/R/${R_VERSION}/lib64/R/etc/Renviron /opt/R/${R_VERSION}/lib/R/etc/Renviron
-RUN R CMD javareconf \
-       && mkdir /root/.R && echo -e "CXX14=g++ -std=c++1y -O3 -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined -fPIC\nCXX14FLAGS=-O3 -march=core-avx-i -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined\nCFLAGS=-O3 -march=core-avx-i -Wno-unused-variable -Wno-unused-function -Wno-builtin-macro-redefined" >> /root/.R/Makevars
-
-# Installing Packages
-
-RUN Rscript -e "install.packages('https://packagemanager.rstudio.com/all/latest/BH_1.66.0-1.tar.gz')"
-RUN Rscript -e "install.packages('shinyMixR', repos = '${RPACKAGE_REPO}' , dependencies = TRUE)"
-COPY Packages.csv /sources/Packages.csv
-
-RUN Rscript -e "install.packages(scan('file:///sources/Packages.csv', what='character'), repos = '${RPACKAGE_REPO}' , dependencies = TRUE)"
-
-#Installing Rmpi and doMPI
-RUN Rscript -e "install.packages('Rmpi', configure.args=c('--with-Rmpi-libpath=/usr/lib64/openmpi/lib','--with-Rmpi-type=OPENMPI','--with-Rmpi-include=/usr/include/openmpi-x86_64'),repos = '${RPACKAGE_REPO}')"
-RUN Rscript -e "install.packages('doMPI',repos = '${RPACKAGE_REPO}')"
-
-# Remove Compiler C FLAGS to install Rgraphviz,,gRbase,gRain
-RUN mv /root/.R/Makevars /root/.R/Makevars_bkp \
-&& Rscript -e "install.packages('Rgraphviz', repos = '${RPACKAGE_REPO}' , dependencies = TRUE)" \
-&& Rscript -e "install.packages('gRbase', repos = '${RPACKAGE_REPO}' , dependencies = TRUE)" \
-&& Rscript -e "install.packages('gRain', repos = '${RPACKAGE_REPO}' , dependencies = TRUE)" \
-&& mv /root/.R/Makevars_bkp /root/.R/Makevars
-
-# create symlink for R4 required in testing framework
-RUN ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R-4.1.1
-
-# setting up the environment variable so that all users can access this makevars file
-ENV R_MAKEVARS_SITE=/opt/R/${R_VERSION}/lib/R/etc/Makevars
-
-# Remove Package files
-RUN rm -rf /sources
