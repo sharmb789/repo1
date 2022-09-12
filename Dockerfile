@@ -5,6 +5,8 @@ RUN subscription-manager register --username=jdesh600 --password=Honey@600 \
 && dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
 && dnf clean all
 
+RUN dnf install -y wget
+
 RUN wget -O https://github.com/metrumresearchgroup/pkgr/releases/download/v3.1.0/pkgr_3.1.0_linux_amd64.tar.gz /tmp/pkgr.tar.gz \
 && tar -xzf /tmp/pkgr.tar.gz pkgr \
 && mv pkgr /usr/local/bin/pkgr \
