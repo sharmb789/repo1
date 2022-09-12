@@ -87,7 +87,7 @@ COPY Makevars /opt/R/${R_VERSION}/lib64/R/etc/Makevars
 COPY Renviron /opt/R/${R_VERSION}/lib/R/etc/Renviron
 COPY Renviron /opt/R/${R_VERSION}/lib64/R/etc/Renviron
 
-UN wget https://github.com/metrumresearchgroup/pkgr/releases/download/v3.1.0/pkgr_3.1.0_linux_amd64.tar.gz -O /tmp/pkgr.tar.gz \
+RUN wget https://github.com/metrumresearchgroup/pkgr/releases/download/v3.1.0/pkgr_3.1.0_linux_amd64.tar.gz -O /tmp/pkgr.tar.gz \
 && tar -xzf /tmp/pkgr.tar.gz pkgr \
 && mv pkgr /usr/local/bin/pkgr \
 && chmod +x /usr/local/bin/pkgr \
