@@ -95,4 +95,27 @@ RUN wget https://github.com/metrumresearchgroup/pkgr/releases/download/v3.1.0/pk
 && chmod +x /usr/local/bin/pkgr \
 && rm -rf /tmp/pkgr.tar.gz
 
-RUN pkgr plan
+Version: 1
+# top level packages
+Packages:
+  - rmarkdown
+  - bitops
+  - caTools
+  - knitr
+  - tidyverse
+  - shiny
+  - logrrr
+
+# any repositories, order matters
+Repos:
+  - MPN: "https://mpn.metworx.com/snapshots/stable/2020-09-20"
+  - CRAN: "https://cran.rstudio.com"
+
+# path to install packages to
+Library: "/usr/local/bin/"
+
+# package specific customizations
+Customizations:
+  Packages:
+    - tidyverse:
+        Suggests: true
