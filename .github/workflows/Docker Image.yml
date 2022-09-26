@@ -7,7 +7,7 @@ on:
     branches:
     - 'main'
     paths:
-    - 'Version'
+    - 'Setup.env'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -21,9 +21,14 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
-        name: Update Dockerfile
+        name: Set environment
         run: |
-          sed -i -e "s/GIT_R_VERSION/$(cat Version)/" Dockerfile   
+          cat Setup.env >> $GITHUB_ENV
+      -
+        name: Update R version
+        run: |
+          sed -i -e "s#GIT_R_VERSION#${{ env.R_VERSION }}#" Dockerfile  
+          sed -i -e "s#GIT_R_VERSION#${{ env.R_VERSION }}#" pkgr.yml
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
