@@ -1,0 +1,20 @@
+Version: 1
+# top level packages
+Packages:
+  - abind
+  - BH
+#  - tidyverse
+#  - shiny
+
+# any repositories, order matters
+Repos:
+  - CRAN: "https://cran.rstudio.com"
+
+# path to install packages to
+Library: "/opt/R/GIT_R_VERSION/lib/R/library"
+
+# package specific customizations
+Customizations:
+  Packages:
+    - BH:
+        Binary: true
