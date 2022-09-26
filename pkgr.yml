@@ -1,10 +1,17 @@
 Version: 1
 # top level packages
 Packages:
-  - abind
   - BH
-#  - tidyverse
-#  - shiny
+  - abind
+  - acepack
+  - acs
+  - ada
+  - ade4
+  - AER
+  - akima
+  - AlignAssign
+  - alr3
+  - AMEShousing
 
 # any repositories, order matters
 Repos:
@@ -17,4 +24,24 @@ Library: "/opt/R/GIT_R_VERSION/lib/R/library"
 Customizations:
   Packages:
     - BH:
+        Binary: true
+    - ABIND:
+        Binary: true
+    - ACEPACK:
+        Binary: true
+    - ACS:
+        Binary: true
+    - ADA:
+        Binary: true
+    - ADE4:
+        Binary: true
+    - AER:
+        Binary: true
+    - AKIMA:
+        Binary: true
+    - ALIGNASSIGN:
+        Binary: true
+    - ALR3:
+        Binary: true
+    - AMESHOUSING:
         Binary: true
