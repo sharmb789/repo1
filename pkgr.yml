@@ -1,17 +1,10 @@
 Version: 1
 # top level packages
 Packages:
-  - BH
   - abind
-  - acepack
-  - acs
-  - ada
-  - ade4
-  - AER
-  - akima
-  - AlignAssign
-  - alr3
-  - AMEShousing
+  - BH
+#  - tidyverse
+#  - shiny
 
 # any repositories, order matters
 Repos:
