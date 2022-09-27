@@ -25,23 +25,3 @@ Customizations:
   Packages:
     - BH:
         Binary: true
-    - ABIND:
-        Binary: true
-    - ACEPACK:
-        Binary: true
-    - ACS:
-        Binary: true
-    - ADA:
-        Binary: true
-    - ADE4:
-        Binary: true
-    - AER:
-        Binary: true
-    - AKIMA:
-        Binary: true
-    - ALIGNASSIGN:
-        Binary: true
-    - ALR3:
-        Binary: true
-    - AMESHOUSING:
-        Binary: true
