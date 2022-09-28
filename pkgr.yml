@@ -1236,6 +1236,7 @@ Packages:
   
 # any repositories, order matters
 Repos:
+  - MPN: "https://mpn.metworx.com/docs/snapshots/2022-08-31"
   - CRAN: "https://cran.rstudio.com"
 
 # path to install packages to
