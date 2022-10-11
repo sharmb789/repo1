@@ -3,26 +3,19 @@ Version: 1
 Packages:
 
   - gtExtras
-  - ricv
   - neo4r
   - npreg
   - gMCP
-  - rpact
   - Tplyr
-  - gganotate
-  - pharmaverse
   - ctrialsgov
   - DelayedEffect.Design
-  - Immunotherapy.Design
   - logrx
   - admiral
   - shinytest2
   - riskmetric
-  - teal
   - todor
   - safetyGraphics
   - cicerone
-  - bs4dash
   - rhino
   - chromote
   - shinymeta
@@ -32,7 +25,6 @@ Packages:
   - MultiRNG
   - nCDunnett
   - bindata
-  - Rpact
   - echarts4r
   - apexcharter
   
